@@ -913,7 +913,7 @@
 <script>
 
     if (sessionStorage.getItem('loggedIn') !== 'true') {
-    window.location.href = 'login.html';
+    window.location.href = 'index.html';
 }
   // ==================== FIREBASE INITIALIZATION ====================
 const firebaseConfig = {
@@ -947,7 +947,7 @@ let currentEmployeeForStats = '';
 auth.onAuthStateChanged((user) => {
     if (!user) {
         sessionStorage.clear();
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
     }
 });
 
@@ -1007,7 +1007,7 @@ document.addEventListener('DOMContentLoaded', function() {
     logoutBtn.addEventListener('click', function() {
         auth.signOut().then(() => {
             sessionStorage.clear();
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         });
     });
     
@@ -1079,7 +1079,7 @@ async function init() {
     auth.onAuthStateChanged(async (user) => {
         if (!user) {
             sessionStorage.clear();
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
             return;
         }
 
