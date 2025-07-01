@@ -1071,7 +1071,7 @@
     <script>
 
         if (sessionStorage.getItem('loggedIn') !== 'true') {
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
     }
     // ==================== FIREBASE INITIALIZATION ====================
     const firebaseConfig = {
@@ -1105,7 +1105,7 @@
     auth.onAuthStateChanged((user) => {
         if (!user) {
             sessionStorage.clear();
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         }
     });
 
@@ -1165,7 +1165,7 @@
         logoutBtn.addEventListener('click', function() {
             auth.signOut().then(() => {
                 sessionStorage.clear();
-                window.location.href = 'login.html';
+                window.location.href = 'index.html';
             });
         });
         
@@ -1237,7 +1237,7 @@
         auth.onAuthStateChanged(async (user) => {
             if (!user) {
                 sessionStorage.clear();
-                window.location.href = 'login.html';
+                window.location.href = 'index.html';
                 return;
             }
 
