@@ -392,7 +392,7 @@
    <script>
     // Check authentication state
     if (sessionStorage.getItem('loggedIn') !== 'true') {
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
     }
 
     const firebaseConfig = {
@@ -417,7 +417,7 @@
     auth.onAuthStateChanged(async (user) => {
         if (!user) {
             sessionStorage.clear();
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         } else {
             currentUser = user;
             document.getElementById('userName').textContent = user.email;
@@ -443,7 +443,7 @@
     document.getElementById('logoutBtn').addEventListener('click', () => {
         auth.signOut().then(() => {
             sessionStorage.clear();
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         }).catch((error) => {
             console.error("Logout error:", error);
         });
