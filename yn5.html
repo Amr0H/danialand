@@ -1,0 +1,2816 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pointage Employés - Danialand</title>
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css">
+    <link rel="icon" href="images/cropped-logo-danialand.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --primary-dark: #2a4a7f;
+            --primary-light: #3a5a8f;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-gray: #f5f5f5;
+            --dark-gray: #333;
+        }
+        
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: white;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            color: #333;
+        }
+        
+        .container {
+            padding: 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header-logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .header-logo img {
+            max-height: 80px;
+            max-width: 100%;
+        }
+        
+        h2 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: var(--primary-dark);
+        }
+        
+        .table-wrapper {
+            width: 100%;
+            overflow: auto;
+            margin-top: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            flex-grow: 1;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: auto;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: center;
+            min-width: 80px;
+            max-width: 80px;
+            word-wrap: break-word;
+        }
+        
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            position: sticky;
+            top: 0;
+            font-weight: 600;
+        }
+        
+        th:first-child,
+        td:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 30;
+            min-width: 50px;
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        thead th:not(:first-child) {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+        
+        #subHeaders th {
+            position: sticky;
+            top: 31px;
+            z-index: 20;
+            background-color: var(--primary-light);
+        }
+        
+        .repos {
+            background-color: var(--danger-color);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .ferie {
+            background-color: var(--warning-color);
+            font-weight: bold;
+        }
+        
+        .conge {
+            background-color: var(--success-color);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .recup {
+            background-color: var(--info-color);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .maladie {
+            background-color: var(--dark-gray);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .ok {
+            color: var(--success-color);
+            font-weight: bold;
+        }
+        
+        .absent {
+            color: var(--danger-color);
+            font-weight: bold;
+        }
+        
+        .weekend {
+            background-color: #f9f9f9;
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            padding: 0px 25px;
+            border-radius: 5px;
+            align-items: center;
+        }
+        
+        .controls-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        button {
+            padding: 8px 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        button:hover {
+            transform: translateY(-1px);
+            background-color: var(--primary-dark);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        select {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            background-color: white;
+            font-size: 14px;
+            min-width: 120px;
+        }
+        .fixed-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: white;
+            padding: 10px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .table-wrapper {
+            margin-top: 0;
+            height: calc(100vh - 260px);
+        }
+        
+        input[type="text"] {
+            width: 50px;
+            padding: 6px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        select.status-select {
+            width: 100%;
+            padding: 4px;
+            border: none;
+            background: transparent;
+            text-align: center;
+            font-weight: bold;
+            color: var(--success-color);
+            cursor: pointer;
+        }
+        
+        .holiday-day {
+            background-color: var(--warning-color);
+            font-weight: bold;
+        }
+        
+        .holiday-name {
+            font-size: 11px;
+            white-space: normal;
+            line-height: 1.2;
+            padding: 2px;
+        }
+        
+        input[type="number"] {
+            width: 60px;
+            padding: 6px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            -moz-appearance: textfield;
+            font-size: 14px;
+        }
+        
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        .number-input-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .number-input-wrapper button {
+            width: 25px;
+            height: 25px;
+            padding: 0;
+            margin: 0 2px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .number-input-wrapper button:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .employee-name {
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .employee-name:hover {
+            color: #ffcc00;
+        }
+        
+        .nav-menu {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-menu button {
+            margin: 0;
+            padding: 8px 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .nav-menu button:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .nav-menu button.active {
+            background-color: var(--primary-dark);
+            box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.3);
+        }
+        
+        .stats-container {
+            display: none;
+            width: 100%;
+            overflow: auto;
+            margin-top: 15px;
+            flex-grow: 1;
+        }
+        
+        .stats-container.active {
+            display: block;
+        }
+        
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .stats-table th, .stats-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            font-size: 15px;
+        }
+        
+        .stats-table th {
+            background-color: var(--primary-color);
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+        
+        .stats-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .stats-table tr:hover {
+            background-color: #f1f1f1;
+        }
+        
+        .stats-summary {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .stat-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            min-width: 200px;
+            text-align: center;
+            flex: 1;
+            transition: transform 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+        
+        .stat-card h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin-top: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 15px;
+        }
+        
+        .yearly-container {
+            display: none;
+            width: 100%;
+            overflow: auto;
+            margin-top: 15px;
+            flex-grow: 1;
+        }
+        
+        .yearly-container.active {
+            display: block;
+        }
+        
+        .yearly-calendar {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+            page-break-after: avoid;
+        }
+        
+        .yearly-calendar th, .yearly-calendar td {
+            border: 1px solid #ddd;
+            padding: 3px;
+            text-align: center;
+        }
+        
+        .yearly-calendar th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .yearly-month {
+            page-break-inside: avoid;
+            margin-bottom: 25px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .yearly-month-title {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .yearly-day {
+            width: 28px;
+            height: 22px;
+            position: relative;
+        }
+        
+        .yearly-status {
+            font-size: 9px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: absolute;
+            bottom: 1px;
+            left: 0;
+            right: 0;
+        }
+        
+    
+        
+        .employee-stats-title {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        #currentEmployeeName,
+        #companyStatsPeriod {
+            font-weight: bold;
+            color: var(--primary-dark);
+        }
+        .print-month-title {
+            display: none;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+            animation: slideIn 0.3s, fadeOut 0.5s 2.5s;
+            animation-fill-mode: forwards;
+        }
+        .yearly-calendar tr td:first-child {
+            font-weight: bold;
+            position: relative;
+        }
+        .yearly-calendar tr.weekend td:first-child::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 3px;
+            height: 100%;
+            background-color: var(--primary-light);
+        }
+        .yearly-calendar td:empty {
+            background-color: #f9f9f9;
+        }
+        .yearly-calendar tr:hover td:not(:first-child) {
+            background-color: rgba(74, 111, 165, 0.1);
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+         @media print {
+            .controls, .nav-menu, .yearly-container {
+                display: none !important;
+            }
+            
+            .header-logo {
+                text-align: center;
+                margin-bottom: 10px;
+                page-break-after: avoid;
+            }
+            
+            .header-logo img {
+                max-height: 50px;
+            }
+            
+            .print-month-title {
+                display: block !important;
+                text-align: center;
+                font-size: 1.2em;
+                font-weight: bold;
+                margin: 5px 0 10px;
+                color: var(--primary-dark);
+                page-break-after: avoid;
+            }
+            
+            .table-wrapper {
+                overflow: visible !important;
+                border: none !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                page-break-inside: avoid;
+            }
+            
+            table {
+                width: 100% !important;
+                font-size: 8px !important;
+                page-break-inside: auto;
+            }
+            
+            th, td {
+                padding: 3px !important;
+                text-align: center !important;
+                min-width: auto !important;
+                max-width: none !important;
+                height: 15px !important;
+                font-size: 7px !important;
+            }
+            
+            th:first-child, td:first-child {
+                position: static !important;
+                background: var(--primary-color) !important;
+                color: white !important;
+                width: 25px !important;
+            }
+            
+            #subHeaders th {
+                position: static !important;
+                background-color: var(--primary-light) !important;
+            }
+            
+            @page {
+                size: auto;
+                margin: 5mm;
+            }
+            
+            body {
+                padding: 0;
+                margin: 0;
+                height: auto;
+                overflow: visible;
+            }
+            
+            .container {
+                padding: 0;
+                height: auto;
+            }
+            
+            .employee-group {
+                page-break-inside: avoid;
+                margin-bottom: 10px;
+            }
+            
+            .print-footer {
+                text-align: center;
+                font-size: 8px;
+                margin-top: 5px;
+            }
+            .stats-table {
+                width: auto !important;
+                table-layout: fixed;
+                margin: 0 auto !important;
+            }
+            .stats-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                width: 100% !important;
+            }
+            .stats-table th:nth-child(1),
+            .stats-table td:nth-child(1) {
+                width: 10% !important; /* Adjust employee name column width */
+            }
+
+            .stats-table th:nth-child(2),
+            .stats-table td:nth-child(2),
+            .stats-table th:nth-child(3),
+            .stats-table td:nth-child(3),
+            .stats-table th:nth-child(4),
+            .stats-table td:nth-child(4),
+            .stats-table th:nth-child(5),
+            .stats-table td:nth-child(5) {
+                width: 12% !important; /* Adjust other columns width */
+            }
+
+            .stats-table th,
+            .stats-table td {
+                padding: 4px !important;
+                font-size: 9px !important;
+                word-wrap: break-word;
+            }
+            .yearly-print-table {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border-collapse: collapse;
+            }
+    
+            .yearly-print-table th, 
+            .yearly-print-table td {
+                padding: 2px !important;
+                font-size: 8px !important;
+            }
+    
+            .print-page {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+    
+            .print-header {
+                padding: 5px 0 !important;
+                margin-bottom: 5px !important;
+            }
+    
+            .print-title {
+                font-size: 14px !important;
+                margin: 5px 0 !important;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .stats-summary {
+                flex-direction: column;
+            }
+            
+            .stat-card {
+                width: 100%;
+            }
+            
+            .nav-menu {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            table {
+                font-size: 10px;
+            }
+            
+            th, td {
+                padding: 4px;
+                min-width: 60px;
+                max-width: 60px;
+            }
+        }
+        
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header-logo">
+        <img src="images/logo-svg-dania-01.png" alt="DANIA LAND Planning System">
+    </div>
+    <div class="nav-menu">
+        <button id="attendanceBtn" class="active"><i class="fas fa-calendar-alt"></i> Pointage</button>
+        <button id="employeeStatsBtn"><i class="fas fa-user-tie"></i> Statistiques Employés</button>
+        <button id="companyStatsBtn"><i class="fas fa-building"></i> Statistiques Entreprise</button>
+        <button id="yearlyViewBtn"><i class="fas fa-calendar"></i> Vue Annuelle</button>
+    </div>
+
+    <!-- Attendance View -->
+    <div id="attendanceView">
+        <div class="controls">
+            <div class="controls-group">
+                <select id="monthSelect">
+                    <option value="0">Janvier</option>
+                    <option value="1">Février</option>
+                    <option value="2">Mars</option>
+                    <option value="3">Avril</option>
+                    <option value="4">Mai</option>
+                    <option value="5" selected>Juin</option>
+                    <option value="6">Juillet</option>
+                    <option value="7">Août</option>
+                    <option value="8">Septembre</option>
+                    <option value="9">Octobre</option>
+                    <option value="10">Novembre</option>
+                    <option value="11">Décembre</option>
+                </select>
+                <select id="yearSelect">
+                    <option value="2023">2023</option>
+                    <option value="2024">2024</option>
+                    <option value="2025" selected>2025</option>
+                </select>
+            </div>
+            <h2 id="monthTitle"></h2>
+            <div class="controls-group">
+                <button id="saveBtn"><i class="fas fa-save"></i> Enregistrer</button>
+                <button id="printBtn"><i class="fas fa-print"></i> Imprimer</button>
+            </div>
+        </div>
+        
+        <div id="printMonthTitle" class="print-month-title"></div>
+        
+        <div class="table-wrapper">
+            <table id="attendanceTable">
+                <thead>
+                    <tr id="mainHeaders">
+                        <th rowspan="2">Jour</th>
+                    </tr>
+                    <tr id="subHeaders">
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="stats-container" id="employeeStatsView">
+        <h2 class="employee-stats-title">Statistiques de  <span id="currentEmployeeName"></span></h2>
+        
+        <div class="stats-summary">
+            <div class="stat-card">
+                <h3>Jours Travaillés</h3>
+                <div class="stat-value" id="employeeWorkedDays">0</div>
+                <div class="stat-label">Jours avec statut "Ok"</div>
+            </div>
+            <div class="stat-card">
+                <h3>Heures Supplémentaires</h3>
+                <div class="stat-value" id="employeeOvertimeHours">0</div>
+                <div class="stat-label">Heures cumulées</div>
+            </div>
+            <div class="stat-card">
+                <h3>Jours de Congé</h3>
+                <div class="stat-value" id="employeeLeaveDays">0</div>
+                <div class="stat-label">Congés + Récupérations</div>
+            </div>
+            <div class="stat-card">
+                <h3>Absences</h3>
+                <div class="stat-value" id="employeeAbsenceDays">0</div>
+                <div class="stat-label">Jours d'absence</div>
+            </div>
+        </div>
+        
+        <h3 style="text-align: center; color: var(--primary-color);">Détail par Mois</h3>
+        <table class="stats-table">
+            <thead>
+                <tr>
+                    <th>Mois</th>
+                    <th>Jours Travaillés</th>
+                    <th>Heures Supp</th>
+                    <th>Congés</th>
+                    <th>Absences</th>
+                </tr>
+            </thead>
+            <tbody id="employeeMonthlyStats">
+            </tbody>
+        </table>
+    </div>
+
+    <div class="stats-container" id="companyStatsView">
+        <h3 id="companyStatsTitle" class="employee-stats-title" >Statistiques Entreprise <span id="companyStatsPeriod"></span></h3>
+        <div class="stats-summary">
+            <div class="stat-card">
+                <h3>Total Heures Supp</h3>
+                <div class="stat-value" id="totalOvertimeHours">0</div>
+                <div class="stat-label">Heures cumulées</div>
+            </div>
+            <div class="stat-card">
+                <h3>Moyenne Heures/Employé</h3>
+                <div class="stat-value" id="avgOvertimeHours">0</div>
+                <div class="stat-label">Par employé</div>
+            </div>
+            <div class="stat-card">
+                <h3>Employés Actifs</h3>
+                <div class="stat-value" id="activeEmployees">0</div>
+                <div class="stat-label">Ce mois</div>
+            </div>
+            <div class="stat-card">
+                <h3>Congés Utilisés</h3>
+                <div class="stat-value" id="totalLeaveDays">0</div>
+                <div class="stat-label">Jours cumulés</div>
+            </div>
+        </div>
+        
+        <h3 id="employeeStatsTitle" style="text-align: center; color: var(--primary-color);">Statistiques par Employé</h3>
+        <table class="stats-table">
+            <thead>
+                <tr>
+                    <th>Employé</th>
+                    <th>Jours Travaillés</th>
+                    <th>Heures Supp</th>
+                    <th>Congés</th>
+                    <th>Absences</th>
+                </tr>
+            </thead>
+            <tbody id="companyEmployeeStats">
+            </tbody>
+        </table>
+        
+        <div class="chart-container">
+            <canvas id="statsChart"></canvas>
+        </div>
+    </div>
+
+    <div class="yearly-container" id="yearlyView">
+        <div class="controls">
+            <div class="controls-group">
+                <select id="yearlyYearSelect">
+                    <option value="2023">2023</option>
+                    <option value="2024">2024</option>
+                    <option value="2025" selected>2025</option>
+                </select>
+                <select id="yearlyEmployeeSelect">
+                </select>
+            </div>
+            <div class="controls-group">
+                <button id="printYearlyBtn"><i class="fas fa-print"></i> Imprimer Calendrier</button>
+            </div>
+        </div>
+        
+        <div class="table-wrapper">
+            <table id="yearlyTable">
+                <thead>
+                    <tr id="yearlyMainHeaders">
+                        <th rowspan="2">Employé</th>
+                    </tr>
+                    <tr id="yearlySubHeaders">
+                    </tr>
+                </thead>
+                <tbody id="yearlyTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    if (sessionStorage.getItem('loggedIn') !== 'true') {
+    window.location.href = 'login.html';
+}
+  // ==================== FIREBASE INITIALIZATION ====================
+const firebaseConfig = {
+    apiKey: "AIzaSyBAxMIvXpnL-qSqWxF29c44mjXBMKfL6mM",
+    authDomain: "danialand-employee-portal.firebaseapp.com",
+    projectId: "danialand-employee-portal",
+    storageBucket: "danialand-employee-portal.appspot.com",
+    messagingSenderId: "595567528213",
+    appId: "1:595567528213:web:74a807c312cbc63c50c11c"
+};
+
+// Initialize Firebase
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Enable offline persistence
+db.enablePersistence().catch((err) => {
+    console.error("Firestore offline persistence error:", err);
+});
+
+// ==================== GLOBAL VARIABLES ====================
+let attendanceData = {};
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
+let employees = [];
+let lastEmployeeUpdate = '';
+let currentEmployeeForStats = '';
+auth.onAuthStateChanged((user) => {
+    if (!user) {
+        sessionStorage.clear();
+        window.location.href = 'login.html';
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    monthSelect.value = currentMonth;
+    yearSelect.value = currentYear;
+    const header = document.createElement('div');
+    header.style.position = 'fixed';
+    header.style.top = '0';
+    header.style.left = '0';
+    header.style.right = '0';
+    header.style.padding = '10px 20px';
+    header.style.color = 'white';
+    header.style.display = 'flex';
+    header.style.justifyContent = 'space-between';
+    header.style.alignItems = 'center';
+    header.style.zIndex = '1000';
+    
+    const logo = document.createElement('div');
+    logo.innerHTML = '<img src="images/beach resort.png" alt="Logo" style="height: 40px;">';
+    header.appendChild(logo);
+    
+    const navButtons = document.createElement('div');
+    navButtons.style.display = 'flex';
+    navButtons.style.gap = '10px';
+    
+    const menuBtn = document.createElement('button');
+    menuBtn.innerHTML = '<i class="fas fa-home"></i> Menu';
+    menuBtn.style.padding = '8px 15px';
+    menuBtn.style.backgroundColor = 'var(--primary-color)';
+    menuBtn.style.color = 'white';
+    menuBtn.style.borderRadius = '4px';
+    menuBtn.style.cursor = 'pointer';
+    menuBtn.addEventListener('click', function() {
+        window.location.href = 'menu.html';
+    });
+    
+    const scheduleBtn = document.createElement('button');
+    scheduleBtn.innerHTML = '<i class="fas fa-calendar"></i> Planning';
+    scheduleBtn.style.padding = '8px 15px';
+    scheduleBtn.style.backgroundColor = 'var(--primary-color)';
+    scheduleBtn.style.color = 'white';
+    scheduleBtn.style.borderRadius = '4px';
+    scheduleBtn.style.cursor = 'pointer';
+    scheduleBtn.addEventListener('click', function() {
+        window.location.href = 'xxx.html';
+    });
+    
+    const logoutBtn = document.createElement('button');
+    logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Logout';
+    logoutBtn.style.padding = '8px 15px';
+    logoutBtn.style.backgroundColor = '#dc3545';
+    logoutBtn.style.color = 'white';
+    logoutBtn.style.border = 'none';
+    logoutBtn.style.borderRadius = '4px';
+    logoutBtn.style.cursor = 'pointer';
+    logoutBtn.addEventListener('click', function() {
+        auth.signOut().then(() => {
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+        });
+    });
+    
+    navButtons.appendChild(menuBtn);
+    navButtons.appendChild(scheduleBtn);
+    navButtons.appendChild(logoutBtn);
+    header.appendChild(navButtons);
+    
+    document.body.insertBefore(header, document.body.firstChild);
+    
+    if (sessionStorage.getItem('userRole') !== 'admin') {
+        document.getElementById('saveBtn').style.display = 'none';
+        
+        document.querySelectorAll('.status-select').forEach(select => {
+            select.disabled = true;
+        });
+        
+        document.querySelectorAll('input[type="number"]').forEach(input => {
+            input.disabled = true;
+        });
+    }
+});
+const monthSelect = document.getElementById('monthSelect');
+const yearSelect = document.getElementById('yearSelect');
+const saveBtn = document.getElementById('saveBtn');
+const printBtn = document.getElementById('printBtn');
+const monthTitle = document.getElementById('monthTitle');
+const attendanceTable = document.getElementById('attendanceTable');
+const subHeaders = document.getElementById('subHeaders');
+const tableBody = document.getElementById('tableBody');
+const attendanceBtn = document.getElementById('attendanceBtn');
+const employeeStatsBtn = document.getElementById('employeeStatsBtn');
+const companyStatsBtn = document.getElementById('companyStatsBtn');
+const attendanceView = document.getElementById('attendanceView');
+const employeeStatsView = document.getElementById('employeeStatsView');
+const companyStatsView = document.getElementById('companyStatsView');
+const yearlyViewBtn = document.getElementById('yearlyViewBtn');
+const yearlyView = document.getElementById('yearlyView');
+const yearlyYearSelect = document.getElementById('yearlyYearSelect');
+const yearlyEmployeeSelect = document.getElementById('yearlyEmployeeSelect');
+const printYearlyBtn = document.getElementById('printYearlyBtn');
+// Moroccan holidays
+const moroccanHolidays = [
+    {month: 0, day: 1, name: "Nouvel An", duration: 1},
+    {month: 0, day: 11, name: "Manifeste de l'Indépendance", duration: 1},
+    {month: 4, day: 1, name: "Fête du Travail", duration: 1},
+    {month: 6, day: 30, name: "Fête du Trône", duration: 1},
+    {month: 7, day: 14, name: "Allégeance Oued Eddahab", duration: 1},
+    {month: 7, day: 20, name: "Révolution du Roi et du Peuple", duration: 1},
+    {month: 7, day: 21, name: "Fête de la Jeunesse", duration: 1},
+    {month: 10, day: 6, name: "Marche Verte", duration: 1},
+    {month: 10, day: 18, name: "Fête de l'Indépendance", duration: 1}
+];
+
+// Islamic holidays for 2025
+const islamicHolidays2025 = [
+    {month: 0, day: 10, name: "Aïd al-Fitr", duration: 1},
+    {month: 5, day: 7, name: "Aïd al-Adha", duration: 2},
+    {month: 7, day: 5, name: "1er Moharram", duration: 1},
+    {month: 6, day: 5, name: "Achoura", duration: 1},
+    {month: 2, day: 15, name: "Mawlid", duration: 1}
+];
+
+// ==================== CORE FUNCTIONS ====================
+
+// Initialize the application
+async function init() {
+    // Check authentication first
+    auth.onAuthStateChanged(async (user) => {
+        if (!user) {
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // Load data and setup listeners
+        await loadData();
+        setupRealtimeListeners();
+        renderTable();
+        setupEventListeners();
+        populateEmployeeDropdown();
+        
+        // Check admin status
+        if (sessionStorage.getItem('userRole') !== 'admin') {
+            document.getElementById('saveBtn').style.display = 'none';
+            document.querySelectorAll('.status-select').forEach(select => {
+                select.disabled = true;
+            });
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                input.disabled = true;
+            });
+        }
+    });
+}
+
+// Load data from Firestore
+async function loadData() {
+    try {
+        const monthKey = `${currentYear}-${currentMonth}`;
+        console.log("Loading data for:", monthKey); // Debug log
+        
+        const monthDoc = await db.collection("attendance").doc(monthKey).get();
+        
+        if (monthDoc.exists) {
+            attendanceData = monthDoc.data().data || {};
+            employees = monthDoc.data().employees || [];
+            console.log("Successfully loaded data for", monthKey);
+        } else {
+            // Initialize with empty data
+            attendanceData = {};
+            // Keep existing employees or load from another source
+            console.log("Created new document for", monthKey);
+            
+            // Initialize with default data if needed
+            await db.collection("attendance").doc(monthKey).set({
+                data: {},
+                employees: employees,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+        
+        lastEmployeeUpdate = JSON.stringify(employees);
+    } catch (error) {
+        console.error("Error loading data:", error);
+        showToast("Error loading data", "error");
+        // Fallback to empty data
+        attendanceData = {};
+    }
+}
+window.addEventListener('beforeunload', (e) => {
+    if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'Vous avez des modifications non enregistrées. Voulez-vous vraiment quitter?';
+        return e.returnValue;
+    }
+});
+// Save data to Firestore
+async function saveData() {
+    try {
+        const monthKey = `${currentYear}-${currentMonth}`;
+        const user = auth.currentUser;
+        
+        if (!user) {
+            showToast("Vous devez être connecté pour enregistrer", "error");
+            return;
+        }
+
+        const dataToSave = {
+            data: attendanceData,
+            employees: employees,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedBy: user.email
+        };
+
+        await db.collection("attendance").doc(monthKey).set(dataToSave);
+        showToast('Données enregistrées avec succès!');
+    } catch (error) {
+        console.error("Erreur d'enregistrement:", error);
+        showToast("Erreur d'enregistrement: " + error.message, "error");
+    }
+}
+
+// Set up realtime listeners
+function setupRealtimeListeners() {
+    const monthKey = `${currentYear}-${currentMonth}`;
+    
+    // Listener for attendance data
+    db.collection("attendance").doc(monthKey).onSnapshot((doc) => {
+        if (doc.exists) {
+            const newData = doc.data();
+            attendanceData = newData.data || {};
+            employees = newData.employees || ["Employé 1", "Employé 2", "Employé 3"];
+            lastEmployeeUpdate = JSON.stringify(employees);
+            renderTable();
+            console.log("Received realtime update for", monthKey);
+        }
+    });
+    
+    // Listener for employee list
+    db.collection("employees").onSnapshot((snapshot) => {
+        employees = snapshot.docs.map(doc => doc.data().name);
+        lastEmployeeUpdate = JSON.stringify(employees);
+        renderTable();
+        populateEmployeeDropdown();
+        console.log("Updated employee list");
+    });
+}
+
+// Render the attendance table
+function renderTable() {
+    const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", 
+                      "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+    document.getElementById('monthTitle').textContent = `Pointage ${monthNames[currentMonth]} ${currentYear}`;
+    document.getElementById('printMonthTitle').textContent = `Pointage ${monthNames[currentMonth]} ${currentYear}`;
+    
+    const mainHeaders = document.getElementById('mainHeaders');
+    while (mainHeaders.cells.length > 1) {
+        mainHeaders.deleteCell(1);
+    }
+    
+    const subHeaders = document.getElementById('subHeaders');
+    subHeaders.innerHTML = '';
+    const tableBody = document.getElementById('tableBody');
+    tableBody.innerHTML = '';
+    
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    
+    // Create employee columns
+    employees.forEach(employee => {
+        const thEmployee = document.createElement('th');
+        thEmployee.textContent = employee;
+        thEmployee.colSpan = 2;
+        thEmployee.style.textAlign = 'center';
+        thEmployee.classList.add('employee-name');
+        thEmployee.addEventListener('click', () => {
+            currentEmployeeForStats = employee;
+            showEmployeeStats();
+            employeeStatsBtn.click();
+        });
+        mainHeaders.appendChild(thEmployee);
+        
+        const thReg = document.createElement('th');
+        thReg.textContent = 'Rég.';
+        subHeaders.appendChild(thReg);
+        
+        const thSupp = document.createElement('th');
+        thSupp.textContent = 'Supp';
+        subHeaders.appendChild(thSupp);
+    });
+    
+    // Create day rows
+    for (let day = 1; day <= daysInMonth; day++) {
+        const row = document.createElement('tr');
+        const date = new Date(currentYear, currentMonth, day);
+        const dayOfWeek = date.getDay();
+        
+        const tdDay = document.createElement('td');
+        tdDay.textContent = day;
+        
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            tdDay.classList.add('weekend');
+        }
+        
+        const holidayInfo = isPublicHoliday(day, currentMonth, currentYear);
+        if (holidayInfo) {
+            tdDay.classList.add('holiday-day');
+            tdDay.title = holidayInfo.name;
+        }
+        
+        row.appendChild(tdDay);
+        
+        employees.forEach(employee => {
+            const dateKey = `${currentYear}-${currentMonth}-${day}`;
+            const holidayInfo = isPublicHoliday(day, currentMonth, currentYear);
+            let status = attendanceData[dateKey]?.[employee]?.status || 'ok';
+            const overtimeHours = attendanceData[dateKey]?.[employee]?.overtimeHours || '0';
+            
+            if (status === 'repos' || status === 'ferie' || status === 'holiday' || 
+                status === 'conge' || status === 'recup' || status === 'maladie') {
+                const tdMerged = document.createElement('td');
+                tdMerged.colSpan = 2;
+                
+                if (status === 'repos') {
+                    tdMerged.className = 'repos';
+                    tdMerged.textContent = 'Repos';
+                } 
+                else if (status === 'ferie') {
+                    tdMerged.className = 'ferie';
+                    tdMerged.textContent = 'Jour Férié';
+                }
+                else if (status === 'holiday') {
+                    tdMerged.className = 'ferie';
+                    const holidayDiv = document.createElement('div');
+                    holidayDiv.className = 'holiday-name';
+                    holidayDiv.textContent = holidayInfo.name + (holidayInfo.duration > 1 ? ` (${holidayInfo.duration}j)` : '');
+                    tdMerged.appendChild(holidayDiv);
+                }
+                else if (status === 'conge') {
+                    tdMerged.className = 'conge';
+                    tdMerged.textContent = 'Congé';
+                }
+                else if (status === 'recup') {
+                    tdMerged.className = 'recup';
+                    tdMerged.textContent = 'Récup';
+                }
+                else if (status === 'maladie') {
+                    tdMerged.className = 'maladie';
+                    tdMerged.textContent = 'Maladie';
+                }
+                
+                if (sessionStorage.getItem('userRole') === 'admin') {
+                    tdMerged.addEventListener('click', () => {
+                        updateStatus(employee, day, 'ok');
+                    });
+                }
+                
+                row.appendChild(tdMerged);
+            } else {
+                // Regular status cell
+                const tdReg = document.createElement('td');
+                const statusSelect = document.createElement('select');
+                statusSelect.className = 'status-select';
+                statusSelect.disabled = sessionStorage.getItem('userRole') !== 'admin';
+                
+                let statusOptions = `
+                    <option value="ok" ${status === 'ok' ? 'selected' : ''}>Ok</option>
+                    <option value="absent" ${status === 'absent' ? 'selected' : ''}>Absent</option>
+                    <option value="repos" ${status === 'repos' ? 'selected' : ''}>Repos</option>
+                    <option value="ferie" ${status === 'ferie' ? 'selected' : ''}>Jour Férié</option>
+                    <option value="conge" ${status === 'conge' ? 'selected' : ''}>Congé</option>
+                    <option value="recup" ${status === 'recup' ? 'selected' : ''}>Récup</option>
+                    <option value="maladie" ${status === 'maladie' ? 'selected' : ''}>Maladie</option>
+                `;
+                
+                if (holidayInfo) {
+                    statusOptions += `
+                        <option value="holiday" ${status === 'holiday' ? 'selected' : ''}>
+                            ${holidayInfo.name}${holidayInfo.duration > 1 ? ` (${holidayInfo.duration}j)` : ''}
+                        </option>
+                    `;
+                }
+                
+                statusSelect.innerHTML = statusOptions;
+                
+                if (status === 'absent') {
+                    statusSelect.style.color = 'var(--danger-color)';
+                } else if (status === 'ok') {
+                    statusSelect.style.color = 'var(--success-color)';
+                }
+                
+                statusSelect.addEventListener('change', (e) => {
+    const newStatus = e.target.value;
+    updateStatus(employee, day, newStatus);
+    
+    // Immediate visual feedback
+    if (newStatus === 'absent') {
+        e.target.style.color = 'var(--danger-color)';
+    } else if (newStatus === 'ok') {
+        e.target.style.color = 'var(--success-color)';
+    } else {
+        e.target.style.color = '';
+    }
+});
+                
+                tdReg.appendChild(statusSelect);
+                row.appendChild(tdReg);
+                
+                // Supplementary hours cell
+                const tdSupp = document.createElement('td');
+                const inputWrapper = document.createElement('div');
+                inputWrapper.className = 'number-input-wrapper';
+
+                const decrementBtn = document.createElement('button');
+                decrementBtn.textContent = '−';
+                decrementBtn.disabled = sessionStorage.getItem('userRole') !== 'admin';
+                decrementBtn.addEventListener('click', () => {
+                    const currentValue = parseInt(overtimeInput.value) || 0;
+                    overtimeInput.value = Math.max(0, currentValue - 1);
+                    updateHours({target: overtimeInput});
+                });
+
+                const overtimeInput = document.createElement('input');
+                overtimeInput.type = 'number';
+                overtimeInput.min = '0';
+                overtimeInput.value = overtimeHours;
+                overtimeInput.dataset.employee = employee;
+                overtimeInput.dataset.day = day;
+                overtimeInput.disabled = sessionStorage.getItem('userRole') !== 'admin';
+                overtimeInput.addEventListener('change', updateHours);
+                
+                if (overtimeHours > 0) {
+    overtimeInput.style.fontWeight = 'bold';
+    overtimeInput.style.color = 'var(--primary-dark)';
+}
+
+overtimeInput.addEventListener('change', updateHours);
+
+                const incrementBtn = document.createElement('button');
+                incrementBtn.textContent = '+';
+                incrementBtn.disabled = sessionStorage.getItem('userRole') !== 'admin';
+                incrementBtn.addEventListener('click', () => {
+                    const currentValue = parseInt(overtimeInput.value) || 0;
+                    overtimeInput.value = currentValue + 1;
+                    updateHours({target: overtimeInput});
+                });
+
+                inputWrapper.appendChild(decrementBtn);
+                inputWrapper.appendChild(overtimeInput);
+                inputWrapper.appendChild(incrementBtn);
+                tdSupp.appendChild(inputWrapper);
+                row.appendChild(tdSupp);
+            }
+        });
+        
+        tableBody.appendChild(row);
+    }
+}
+let hasUnsavedChanges = false;
+// Update employee status
+function updateStatus(employee, day, newStatus) {
+    const dateKey = `${currentYear}-${currentMonth}-${day}`;
+    if (!attendanceData[dateKey]) {
+        attendanceData[dateKey] = {};
+    }
+    if (!attendanceData[dateKey][employee]) {
+        attendanceData[dateKey][employee] = {};
+    }
+    
+    // Update local data only (no auto-save)
+    attendanceData[dateKey][employee].status = newStatus;
+    
+    // Immediately update the UI
+    updateCellAppearance(employee, day, newStatus);
+    
+    // No saveData() call here anymore
+   hasUnsavedChanges = true;
+    updateSaveButtonState();
+}
+function updateSaveButtonState() {
+    saveBtn.disabled = !hasUnsavedChanges;
+    saveBtn.style.opacity = hasUnsavedChanges ? '1' : '0.7';
+}
+
+function updateCellAppearance(employee, day, status) {
+    const row = document.querySelector(`#tableBody tr:nth-child(${day})`);
+    if (!row) return;
+    
+    const empIndex = employees.indexOf(employee);
+    if (empIndex === -1) return;
+    
+    // Calculate the correct cell positions accounting for any existing merged cells
+    let statusCellIndex = 1; // Start after day cell
+    let found = false;
+    
+    for (let i = 0; i < employees.length; i++) {
+        if (i === empIndex) {
+            found = true;
+            break;
+        }
+        
+        // Check if this employee's cell is merged
+        const cell = row.cells[statusCellIndex];
+        if (cell.colSpan === 2) {
+            statusCellIndex += 1; // Skip next cell (merged)
+        } else {
+            statusCellIndex += 2; // Normal two-cell layout
+        }
+    }
+    
+    if (!found) return;
+    
+    const statusCell = row.cells[statusCellIndex];
+    const hoursCell = row.cells[statusCellIndex + 1];
+    
+    // Handle special statuses (merged cell)
+    if (status === 'repos' || status === 'ferie' || status === 'holiday' || 
+        status === 'conge' || status === 'recup' || status === 'maladie') {
+        
+        // If already a merged cell with correct status, do nothing
+        if (statusCell.colSpan === 2 && statusCell.className.includes(status.replace(' ', '-'))) {
+            return;
+        }
+        
+        // Create new merged cell
+        const mergedCell = document.createElement('td');
+        mergedCell.colSpan = 2;
+        
+        // Apply appropriate class and content
+        if (status === 'repos') {
+            mergedCell.className = 'repos';
+            mergedCell.textContent = 'Repos';
+        } else if (status === 'ferie') {
+            mergedCell.className = 'ferie';
+            mergedCell.textContent = 'Jour Férié';
+        } else if (status === 'holiday') {
+            mergedCell.className = 'ferie';
+            const holidayInfo = isPublicHoliday(day, currentMonth, currentYear);
+            const holidayDiv = document.createElement('div');
+            holidayDiv.className = 'holiday-name';
+            holidayDiv.textContent = holidayInfo ? holidayInfo.name + (holidayInfo.duration > 1 ? ` (${holidayInfo.duration}j)` : '') : 'Férié';
+            mergedCell.appendChild(holidayDiv);
+        } else if (status === 'conge') {
+            mergedCell.className = 'conge';
+            mergedCell.textContent = 'Congé';
+        } else if (status === 'recup') {
+            mergedCell.className = 'recup';
+            mergedCell.textContent = 'Récup';
+        } else if (status === 'maladie') {
+            mergedCell.className = 'maladie';
+            mergedCell.textContent = 'Maladie';
+        }
+        
+        // Replace existing cells
+        if (statusCell.colSpan === 2) {
+            // Replacing an existing merged cell
+            row.replaceChild(mergedCell, statusCell);
+        } else {
+            // Replacing normal cells
+            row.replaceChild(mergedCell, statusCell);
+            if (hoursCell) row.removeChild(hoursCell);
+        }
+        
+        // Add click handler for admins
+        if (sessionStorage.getItem('userRole') === 'admin') {
+            mergedCell.addEventListener('click', () => {
+                updateStatus(employee, day, 'ok');
+            });
+        }
+    } else {
+        // Handle regular status (ok/absent)
+        
+        // If we're currently a merged cell, we need to split back to two cells
+        if (statusCell.colSpan === 2) {
+            // Remove merged cell
+            row.removeChild(statusCell);
+            
+            // Create new status cell
+            const newStatusCell = document.createElement('td');
+            const statusSelect = document.createElement('select');
+            statusSelect.className = 'status-select';
+            statusSelect.disabled = sessionStorage.getItem('userRole') !== 'admin';
+            
+            // Populate options (same as in renderTable)
+            let statusOptions = `
+                <option value="ok" ${status === 'ok' ? 'selected' : ''}>Ok</option>
+                <option value="absent" ${status === 'absent' ? 'selected' : ''}>Absent</option>
+                <option value="repos" ${status === 'repos' ? 'selected' : ''}>Repos</option>
+                <option value="ferie" ${status === 'ferie' ? 'selected' : ''}>Jour Férié</option>
+                <option value="conge" ${status === 'conge' ? 'selected' : ''}>Congé</option>
+                <option value="recup" ${status === 'recup' ? 'selected' : ''}>Récup</option>
+                <option value="maladie" ${status === 'maladie' ? 'selected' : ''}>Maladie</option>
+            `;
+            
+            const holidayInfo = isPublicHoliday(day, currentMonth, currentYear);
+            if (holidayInfo) {
+                statusOptions += `
+                    <option value="holiday" ${status === 'holiday' ? 'selected' : ''}>
+                        ${holidayInfo.name}${holidayInfo.duration > 1 ? ` (${holidayInfo.duration}j)` : ''}
+                    </option>
+                `;
+            }
+            
+            statusSelect.innerHTML = statusOptions;
+            statusSelect.addEventListener('change', (e) => {
+                updateStatus(employee, day, e.target.value);
+            });
+            
+            newStatusCell.appendChild(statusSelect);
+            
+            // Create new hours cell
+            const newHoursCell = document.createElement('td');
+            const inputWrapper = document.createElement('div');
+            inputWrapper.className = 'number-input-wrapper';
+            
+            // Recreate the hours input (same as in renderTable)
+            const decrementBtn = document.createElement('button');
+            decrementBtn.textContent = '−';
+            decrementBtn.disabled = sessionStorage.getItem('userRole') !== 'admin';
+            decrementBtn.addEventListener('click', () => {
+                const currentValue = parseInt(overtimeInput.value) || 0;
+                overtimeInput.value = Math.max(0, currentValue - 1);
+                updateHours({target: overtimeInput});
+            });
+
+            const overtimeInput = document.createElement('input');
+            overtimeInput.type = 'number';
+            overtimeInput.min = '0';
+            overtimeInput.value = attendanceData[`${currentYear}-${currentMonth}-${day}`]?.[employee]?.overtimeHours || '0';
+            overtimeInput.dataset.employee = employee;
+            overtimeInput.dataset.day = day;
+            overtimeInput.disabled = sessionStorage.getItem('userRole') !== 'admin';
+            overtimeInput.addEventListener('change', updateHours);
+
+            const incrementBtn = document.createElement('button');
+            incrementBtn.textContent = '+';
+            incrementBtn.disabled = sessionStorage.getItem('userRole') !== 'admin';
+            incrementBtn.addEventListener('click', () => {
+                const currentValue = parseInt(overtimeInput.value) || 0;
+                overtimeInput.value = currentValue + 1;
+                updateHours({target: overtimeInput});
+            });
+
+            inputWrapper.appendChild(decrementBtn);
+            inputWrapper.appendChild(overtimeInput);
+            inputWrapper.appendChild(incrementBtn);
+            newHoursCell.appendChild(inputWrapper);
+            
+            // Insert new cells
+            row.insertBefore(newStatusCell, row.cells[statusCellIndex] || null);
+            row.insertBefore(newHoursCell, row.cells[statusCellIndex + 1] || null);
+        } else {
+            // Just update the existing select
+            const statusSelect = statusCell.querySelector('select');
+            if (statusSelect) {
+                statusSelect.value = status;
+                if (status === 'absent') {
+                    statusSelect.style.color = 'var(--danger-color)';
+                } else if (status === 'ok') {
+                    statusSelect.style.color = 'var(--success-color)';
+                } else {
+                    statusSelect.style.color = '';
+                }
+            }
+        }
+    }
+}
+
+// Update supplementary hours
+function updateHours(e) {
+    const input = e.target;
+    const employee = input.dataset.employee;
+    const day = input.dataset.day;
+    const value = parseInt(input.value) || 0;
+    
+    const dateKey = `${currentYear}-${currentMonth}-${day}`;
+    if (!attendanceData[dateKey]) {
+        attendanceData[dateKey] = {};
+    }
+    if (!attendanceData[dateKey][employee]) {
+        attendanceData[dateKey][employee] = {};
+    }
+    
+    // Update local data only (no auto-save)
+    attendanceData[dateKey][employee].overtimeHours = value;
+    
+    // Visual feedback
+    input.style.fontWeight = value > 0 ? 'bold' : 'normal';
+    input.style.color = value > 0 ? 'var(--primary-dark)' : 'inherit';
+    
+    // Track that we have unsaved changes
+    hasUnsavedChanges = true;
+    updateSaveButtonState();
+}
+
+// Check if a day is a public holiday
+function isPublicHoliday(day, month, year) {
+    const allHolidays = [...moroccanHolidays];
+    if (year === 2025) allHolidays.push(...islamicHolidays2025);
+    
+    for (const holiday of allHolidays) {
+        if (holiday.month === month) {
+            if (day >= holiday.day && day < holiday.day + holiday.duration) {
+                return {
+                    name: holiday.name,
+                    duration: holiday.duration,
+                    isFirstDay: day === holiday.day
+                };
+            }
+        }
+    }
+    return null;
+}
+
+// Show toast notification
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// Populate employee dropdown
+function populateEmployeeDropdown() {
+    const yearlyEmployeeSelect = document.getElementById('yearlyEmployeeSelect');
+    yearlyEmployeeSelect.innerHTML = '';
+    
+    employees.forEach(employee => {
+        const option = document.createElement('option');
+        option.value = employee;
+        option.textContent = employee;
+        yearlyEmployeeSelect.appendChild(option);
+    });
+    
+    if (employees.length > 0 && !yearlyEmployeeSelect.value) {
+        yearlyEmployeeSelect.value = employees[0];
+    }
+}
+
+// Initialize the application when DOM is loaded
+document.addEventListener('DOMContentLoaded', init);
+
+
+
+
+
+
+
+function showEmployeeStats() {
+    if (!currentEmployeeForStats && employees.length > 0) {
+        currentEmployeeForStats = employees[0];
+    }
+    const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", 
+                       "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+    
+    document.getElementById('currentEmployeeName').innerHTML = `${currentEmployeeForStats} (${monthNames[currentMonth]} ${currentYear})  `;
+    
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    let workedDays = 0;
+    let overtimeHours = 0;
+    let leaveDays = 0;
+    let absenceDays = 0;
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateKey = `${currentYear}-${currentMonth}-${day}`;
+        const status = attendanceData[dateKey]?.[currentEmployeeForStats]?.status || 'ok';
+        const hours = parseInt(attendanceData[dateKey]?.[currentEmployeeForStats]?.overtimeHours) || 0;
+        
+        if (status === 'ok') {
+            workedDays++;
+            overtimeHours += hours;
+        } else if (status === 'absent') {
+            absenceDays++;
+        } else if (status === 'conge' || status === 'recup') {
+            leaveDays++;
+        }
+    }
+    
+    document.getElementById('employeeWorkedDays').textContent = workedDays;
+    document.getElementById('employeeOvertimeHours').textContent = overtimeHours;
+    document.getElementById('employeeLeaveDays').textContent = leaveDays;
+    document.getElementById('employeeAbsenceDays').textContent = absenceDays;
+    
+    const monthlyStatsTable = document.getElementById('employeeMonthlyStats');
+    monthlyStatsTable.innerHTML = '';
+    
+    for (let month = 0; month < 12; month++) {
+        const daysInMonth = new Date(currentYear, month + 1, 0).getDate();
+        let monthWorkedDays = 0;
+        let monthOvertimeHours = 0;
+        let monthLeaveDays = 0;
+        let monthAbsenceDays = 0;
+        
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateKey = `${currentYear}-${month}-${day}`;
+            const status = attendanceData[dateKey]?.[currentEmployeeForStats]?.status || 'ok';
+            const hours = parseInt(attendanceData[dateKey]?.[currentEmployeeForStats]?.overtimeHours) || 0;
+            
+            if (status === 'ok') {
+                monthWorkedDays++;
+                monthOvertimeHours += hours;
+            } else if (status === 'absent') {
+                monthAbsenceDays++;
+            } else if (status === 'conge' || status === 'recup') {
+                monthLeaveDays++;
+            }
+        }
+        
+        if (monthWorkedDays > 0 || monthOvertimeHours > 0 || monthLeaveDays > 0 || monthAbsenceDays > 0) {
+            const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", 
+                              "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${monthNames[month]}</td>
+                <td>${monthWorkedDays}</td>
+                <td>${monthOvertimeHours}</td>
+                <td>${monthLeaveDays}</td>
+                <td>${monthAbsenceDays}</td>
+            `;
+            monthlyStatsTable.appendChild(row);
+        }
+    }
+}
+
+function showCompanyStats() {
+    let totalOvertimeHours = 0;
+    let totalLeaveDays = 0;
+    let activeEmployees = 0;
+    
+    const employeeStatsTable = document.getElementById('companyEmployeeStats');
+    employeeStatsTable.innerHTML = '';
+    const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", 
+                  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+    const currentMonthName = monthNames[currentMonth];
+    const period = `(${monthNames[currentMonth]} ${currentYear})`;
+    document.getElementById('companyStatsPeriod').textContent = period;
+    
+    const statsTitle = document.getElementById('employeeStatsTitle');
+    if (statsTitle) {
+        statsTitle.textContent = `Statistiques par Employé (${currentMonthName})`;
+    }
+        
+    employees.forEach(employee => {
+        let employeeWorkedDays = 0;
+        let employeeOvertimeHours = 0;
+        let employeeLeaveDays = 0;
+        let employeeAbsenceDays = 0;
+        
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateKey = `${currentYear}-${currentMonth}-${day}`;
+            const status = attendanceData[dateKey]?.[employee]?.status || 'ok';
+            const hours = parseInt(attendanceData[dateKey]?.[employee]?.overtimeHours) || 0;
+            
+            if (status === 'ok') {
+                employeeWorkedDays++;
+                employeeOvertimeHours += hours;
+            } else if (status === 'absent') {
+                employeeAbsenceDays++;
+            } else if (status === 'conge' || status === 'recup') {
+                employeeLeaveDays++;
+            }
+        }
+        
+        totalOvertimeHours += employeeOvertimeHours;
+        totalLeaveDays += employeeLeaveDays;
+        if (employeeWorkedDays > 0) activeEmployees++;
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${employee}</td>
+            <td>${employeeWorkedDays}</td>
+            <td>${employeeOvertimeHours}</td>
+            <td>${employeeLeaveDays}</td>
+            <td>${employeeAbsenceDays}</td>
+        `;
+        employeeStatsTable.appendChild(row);
+    });
+    
+    document.getElementById('totalOvertimeHours').textContent = totalOvertimeHours;
+    document.getElementById('avgOvertimeHours').textContent = employees.length > 0 ? 
+        Math.round(totalOvertimeHours / employees.length) : 0;
+    document.getElementById('activeEmployees').textContent = activeEmployees;
+    document.getElementById('totalLeaveDays').textContent = totalLeaveDays;
+    
+    if (typeof Chart !== 'undefined') {
+        updateStatsChart();
+    }
+}
+
+function updateStatsChart() {
+    const ctx = document.getElementById('statsChart').getContext('2d');
+    const labels = employees;
+    const workedDaysData = [];
+    const overtimeData = [];
+    
+    employees.forEach(employee => {
+        let workedDays = 0;
+        let overtime = 0;
+        
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateKey = `${currentYear}-${currentMonth}-${day}`;
+            const status = attendanceData[dateKey]?.[employee]?.status || 'ok';
+            const hours = parseInt(attendanceData[dateKey]?.[employee]?.overtimeHours) || 0;
+            
+            if (status === 'ok') {
+                workedDays++;
+                overtime += hours;
+            }
+        }
+        
+        workedDaysData.push(workedDays);
+        overtimeData.push(overtime);
+    });
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Jours Travaillés',
+                    data: workedDaysData,
+                    backgroundColor: 'rgba(74, 111, 165, 0.7)',
+                    borderColor: 'rgba(74, 111, 165, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Heures Supp',
+                    data: overtimeData,
+                    backgroundColor: 'rgba(255, 193, 7, 0.7)',
+                    borderColor: 'rgba(255, 193, 7, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function renderYearlyCalendar() {
+    const year = parseInt(yearlyYearSelect.value);
+    const selectedEmployee = yearlyEmployeeSelect.value;
+    const yearlyMainHeaders = document.getElementById('yearlyMainHeaders');
+    const yearlySubHeaders = document.getElementById('yearlySubHeaders');
+    const yearlyTableBody = document.getElementById('yearlyTableBody');
+    
+    yearlyMainHeaders.innerHTML = '<th rowspan="2">Jour</th>';
+    yearlySubHeaders.innerHTML = '';
+    yearlyTableBody.innerHTML = '';
+    
+    const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", 
+                      "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+    
+    monthNames.forEach(month => {
+        const thMonth = document.createElement('th');
+        thMonth.textContent = month;
+        thMonth.colSpan = 2;
+        yearlyMainHeaders.appendChild(thMonth);
+        
+        const thReg = document.createElement('th');
+        thReg.textContent = 'Rég.';
+        yearlySubHeaders.appendChild(thReg);
+        
+        const thSupp = document.createElement('th');
+        thSupp.textContent = 'Supp';
+        yearlySubHeaders.appendChild(thSupp);
+    });
+    
+    for (let day = 1; day <= 31; day++) {
+        const row = document.createElement('tr');
+        const dayCell = document.createElement('td');
+        dayCell.textContent = day;
+        row.appendChild(dayCell);
+        
+        for (let month = 0; month < 12; month++) {
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            if (day > daysInMonth) {
+                row.appendChild(document.createElement('td'));
+                row.appendChild(document.createElement('td'));
+                continue;
+            }
+            
+            const dateKey = `${year}-${month}-${day}`;
+            const status = attendanceData[dateKey]?.[selectedEmployee]?.status || 'ok';
+            const hours = attendanceData[dateKey]?.[selectedEmployee]?.overtimeHours || '0';
+            
+            if (status === 'repos' || status === 'ferie' || status === 'holiday' || 
+                status === 'conge' || status === 'recup' || status === 'maladie') {
+                const mergedCell = document.createElement('td');
+                mergedCell.colSpan = 2;
+                
+                if (status === 'repos') {
+                    mergedCell.className = 'repos';
+                    mergedCell.textContent = 'Repos';
+                } else if (status === 'ferie' || status === 'holiday') {
+                    mergedCell.className = 'ferie';
+                    const holidayInfo = isPublicHoliday(day, month, year);
+                    mergedCell.textContent = holidayInfo ? holidayInfo.name : 'Férié';
+                } else if (status === 'conge') {
+                    mergedCell.className = 'conge';
+                    mergedCell.textContent = 'Congé';
+                } else if (status === 'recup') {
+                    mergedCell.className = 'recup';
+                    mergedCell.textContent = 'Récup';
+                } else if (status === 'maladie') {
+                    mergedCell.className = 'maladie';
+                    mergedCell.textContent = 'Maladie';
+                }
+                
+                row.appendChild(mergedCell);
+            } else {
+                const statusCell = document.createElement('td');
+                if (status === 'absent') {
+                    statusCell.className = 'absent';
+                    statusCell.textContent = 'Absent';
+                } else {
+                    statusCell.className = 'ok';
+                    statusCell.textContent = 'OK';
+                }
+                row.appendChild(statusCell);
+                
+                const hoursCell = document.createElement('td');
+                hoursCell.textContent = hours;
+                row.appendChild(hoursCell);
+            }
+        }
+        
+        yearlyTableBody.appendChild(row);
+    }
+}
+
+function setupEventListeners() {
+    monthSelect.addEventListener('change', async () => {
+    currentMonth = parseInt(monthSelect.value);
+    await loadData();
+    renderTable();
+});
+   yearSelect.addEventListener('change', async () => {
+    currentYear = parseInt(yearSelect.value);
+    await loadData();
+    renderTable();
+});
+
+    yearlyEmployeeSelect.addEventListener('change', () => {
+        renderYearlyCalendar();
+    });
+    
+    saveBtn.addEventListener('click', () => {
+    saveData();
+    hasUnsavedChanges = false;
+    updateSaveButtonState();
+});
+    
+    printBtn.addEventListener('click', () => {
+        employeeStatsView.style.display = 'none';
+        companyStatsView.style.display = 'none';
+        yearlyView.style.display = 'none';
+        attendanceView.style.display = 'block';
+        document.getElementById('printMonthTitle').style.display = 'block';
+
+        const printContainer = document.createElement('div');
+        printContainer.id = 'print-container';
+        printContainer.style.display = 'none';
+        document.body.appendChild(printContainer);
+
+        const headerLogo = document.querySelector('.header-logo').cloneNode(true);
+        const monthTitle = document.getElementById('printMonthTitle').cloneNode(true);
+        const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", 
+                          "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+        const title = `Pointage ${monthNames[currentMonth]} ${currentYear}`;
+
+        let totalOvertimeHours = 0;
+        let totalWorkedDays = 0;
+        let activeEmployees = 0;
+        let totalLeaveDays = 0;
+        
+        employees.forEach(employee => {
+            let employeeWorkedDays = 0;
+            let employeeOvertimeHours = 0;
+            let employeeLeaveDays = 0;
+            
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateKey = `${currentYear}-${currentMonth}-${day}`;
+                const status = attendanceData[dateKey]?.[employee]?.status || 'ok';
+                const hours = parseInt(attendanceData[dateKey]?.[employee]?.overtimeHours) || 0;
+                
+                if (status === 'ok') {
+                    employeeWorkedDays++;
+                    employeeOvertimeHours += hours;
+                } else if (status === 'conge' || status === 'recup') {
+                    employeeLeaveDays++;
+                }
+            }
+            
+            totalOvertimeHours += employeeOvertimeHours;
+            totalWorkedDays += employeeWorkedDays;
+            totalLeaveDays += employeeLeaveDays;
+            if (employeeWorkedDays > 0) activeEmployees++;
+        });
+
+        const avgWorkedDays = employees.length > 0 ? (totalWorkedDays / employees.length).toFixed(1) : 0;
+        const avgOvertimeHours = employees.length > 0 ? (totalOvertimeHours / employees.length).toFixed(1) : 0;
+
+        const employeesPerPage = 11;
+        const totalEmployees = employees.length;
+        const totalPages = Math.ceil(totalEmployees / employeesPerPage);
+
+        for (let page = 0; page < totalPages; page++) {
+            const pageContainer = document.createElement('div');
+            pageContainer.className = 'employee-group';
+            pageContainer.style.width = '100%';
+            pageContainer.style.margin = '0';
+            pageContainer.style.padding = '0';
+
+            const pageHeader = headerLogo.cloneNode(true);
+            pageHeader.style.margin = '0';
+            pageHeader.style.padding = '0';
+            const pageTitle = monthTitle.cloneNode(true);
+            pageTitle.textContent = `${title} (Page ${page + 1}/${totalPages + 1})`;
+            pageTitle.style.margin = '0 0 5px 0';
+            pageContainer.appendChild(pageHeader);
+            pageContainer.appendChild(pageTitle);
+
+            const pageTable = document.createElement('table');
+            pageTable.className = 'attendanceTable';
+            pageTable.style.width = '100%';
+            pageTable.style.margin = '0';
+            pageTable.style.padding = '0';
+            pageTable.style.borderCollapse = 'collapse';
+            pageTable.style.tableLayout = 'fixed';
+
+            const thead = document.createElement('thead');
+            const mainHeaderRow = document.createElement('tr');
+            const subHeaderRow = document.createElement('tr');
+
+            const dayHeader = document.createElement('th');
+            dayHeader.rowSpan = 2;
+            dayHeader.textContent = 'Jour';
+            dayHeader.style.width = '25px';
+            mainHeaderRow.appendChild(dayHeader);
+
+            for (let i = page * employeesPerPage; i < Math.min((page + 1) * employeesPerPage, totalEmployees); i++) {
+                const employee = employees[i];
+
+                const empHeader = document.createElement('th');
+                empHeader.colSpan = 2;
+                empHeader.textContent = employee;
+                empHeader.style.textAlign = 'center';
+                empHeader.style.width = '16%';
+                mainHeaderRow.appendChild(empHeader);
+
+                const regHeader = document.createElement('th');
+                regHeader.textContent = 'Rég.';
+                regHeader.style.width = '8%';
+                subHeaderRow.appendChild(regHeader);
+
+                const suppHeader = document.createElement('th');
+                suppHeader.textContent = 'Supp';
+                suppHeader.style.width = '8%';
+                subHeaderRow.appendChild(suppHeader);
+            }
+
+            const totalCols = Math.min(employeesPerPage, totalEmployees - (page * employeesPerPage)) * 2 + 1;
+            if (mainHeaderRow.cells.length > totalCols) {
+                while (mainHeaderRow.cells.length > totalCols) {
+                    mainHeaderRow.deleteCell(mainHeaderRow.cells.length - 1);
+                    subHeaderRow.deleteCell(subHeaderRow.cells.length - 1);
+                }
+            }
+
+            thead.appendChild(mainHeaderRow);
+            thead.appendChild(subHeaderRow);
+            pageTable.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const row = document.createElement('tr');
+                row.style.height = '15px';
+
+                const dayCell = document.createElement('td');
+                dayCell.textContent = day;
+                dayCell.style.width = '25px';
+                row.appendChild(dayCell);
+
+                for (let i = page * employeesPerPage; i < Math.min((page + 1) * employeesPerPage, totalEmployees); i++) {
+                    const employee = employees[i];
+                    const dateKey = `${currentYear}-${currentMonth}-${day}`;
+                    const status = attendanceData[dateKey]?.[employee]?.status || 'ok';
+                    const hours = attendanceData[dateKey]?.[employee]?.overtimeHours || '0';
+                    if (status === 'repos' || status === 'ferie' || status === 'holiday' || 
+                        status === 'conge' || status === 'recup' || status === 'maladie') {
+                        const mergedCell = document.createElement('td');
+                        mergedCell.colSpan = 2;
+                        mergedCell.style.padding = '1px';
+                        
+                        if (status === 'repos') {
+                            mergedCell.className = 'repos';
+                            mergedCell.textContent = 'Repos';
+                        } else if (status === 'ferie') {
+                            mergedCell.className = 'ferie';
+                            mergedCell.textContent = 'Férié';
+                        } else if (status === 'holiday') {
+                            mergedCell.className = 'ferie';
+                            mergedCell.textContent = 'Férié';
+                        } else if (status === 'conge') {
+                            mergedCell.className = 'conge';
+                            mergedCell.textContent = 'Congé';
+                        } else if (status === 'recup') {
+                            mergedCell.className = 'recup';
+                            mergedCell.textContent = 'Récup';
+                        } else if (status === 'maladie') {
+                            mergedCell.className = 'maladie';
+                            mergedCell.textContent = 'Maladie';
+                        }
+                        
+                        row.appendChild(mergedCell);
+                    } else {
+                        const regCell = document.createElement('td');
+                        regCell.textContent = status === 'ok' ? 'OK' : 'Absent';
+                        regCell.style.width = '8%';
+                        regCell.style.padding = '1px';
+                        if (status === 'ok') regCell.className = 'ok';
+                        if (status === 'absent') regCell.className = 'absent';
+                        row.appendChild(regCell);
+                        
+                        const suppCell = document.createElement('td');
+                        suppCell.textContent = hours;
+                        suppCell.style.width = '8%';
+                        suppCell.style.padding = '1px';
+                        row.appendChild(suppCell);
+                    }
+                }
+                
+                tbody.appendChild(row);
+            }
+            
+            pageTable.appendChild(tbody);
+            pageContainer.appendChild(pageTable);
+
+            const footer = document.createElement('div');
+            footer.className = 'print-footer';
+            footer.textContent = `Page ${page + 1} of ${totalPages + 1}`;
+            footer.style.marginTop = '3px';
+
+            pageContainer.appendChild(footer);
+            printContainer.appendChild(pageContainer);
+        }
+
+        const statsContainer = document.createElement('div');
+        statsContainer.className = 'employee-group';
+        statsContainer.style.width = '100%';
+        statsContainer.style.margin = '0';
+        statsContainer.style.padding = '0';
+
+        const statsHeader = headerLogo.cloneNode(true);
+        statsHeader.style.margin = '0';
+        statsHeader.style.padding = '0';
+        const statsTitle = document.createElement('h2');
+        statsTitle.textContent = `Statistiques Professionnelles - ${monthNames[currentMonth]} ${currentYear}`;
+        statsTitle.style.textAlign = 'center';
+        statsTitle.style.margin = '0 0 10px 0';
+        statsTitle.style.color = '#4a6fa5';
+        statsTitle.style.fontSize = '16px';
+        statsContainer.appendChild(statsHeader);
+        statsContainer.appendChild(statsTitle);
+
+        const statsSummary = document.createElement('div');
+        statsSummary.className = 'stats-summary';
+        statsSummary.style.display = 'flex';
+        statsSummary.style.justifyContent = 'space-between';
+        statsSummary.style.flexWrap = 'wrap';
+        statsSummary.style.gap = '15px';
+        statsSummary.style.marginBottom = '20px';
+        statsSummary.style.padding = '15px';
+        statsSummary.style.backgroundColor = '#f8f9fa';
+        statsSummary.style.borderRadius = '8px';
+        statsSummary.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+
+        const createStatCard = (title, value, label) => {
+            const card = document.createElement('div');
+            card.className = 'stat-card';
+            card.style.flex = '1';
+            card.style.minWidth = '150px';
+            card.style.padding = '15px';
+            card.style.backgroundColor = 'white';
+            card.style.borderRadius = '6px';
+            card.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+            card.style.textAlign = 'center';
+            card.style.transition = 'transform 0.2s';
+
+            const titleEl = document.createElement('h3');
+            titleEl.textContent = title;
+            titleEl.style.margin = '0 0 10px 0';
+            titleEl.style.color = '#4a6fa5';
+            titleEl.style.fontSize = '14px';
+            titleEl.style.fontWeight = '600';
+
+            const valueEl = document.createElement('div');
+            valueEl.className = 'stat-value';
+            valueEl.textContent = value;
+            valueEl.style.fontSize = '24px';
+            valueEl.style.fontWeight = 'bold';
+            valueEl.style.color = '#333';
+            valueEl.style.margin = '10px 0';
+
+            const labelEl = document.createElement('div');
+            labelEl.className = 'stat-label';
+            labelEl.textContent = label;
+            labelEl.style.color = '#666';
+            labelEl.style.fontSize = '12px';
+
+            card.appendChild(titleEl);
+            card.appendChild(valueEl);
+            card.appendChild(labelEl);
+            return card;
+        };
+
+        statsSummary.appendChild(createStatCard('Moyenne Jours Travaillés', avgWorkedDays, 'Jours par employé'));
+        statsSummary.appendChild(createStatCard('Moyenne Heures Supp', avgOvertimeHours, 'Heures par employé'));
+        statsSummary.appendChild(createStatCard('Total Heures Supp', totalOvertimeHours, 'Heures cumulées'));
+        statsSummary.appendChild(createStatCard('Employés Actifs', activeEmployees, `Sur ${employees.length}`));
+        statsSummary.appendChild(createStatCard('Jours de Congé', totalLeaveDays, 'Congés + Récupérations'));
+
+        statsContainer.appendChild(statsSummary);
+
+        const statsTable = document.createElement('table');
+        statsTable.className = 'stats-table';
+        statsTable.style.width = '100%';
+        statsTable.style.margin = '0';
+        statsTable.style.padding = '0';
+        statsTable.style.borderCollapse = 'collapse';
+        statsTable.style.fontSize = '12px';
+        statsTable.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+
+        const statsThead = document.createElement('thead');
+        const statsHeaderRow = document.createElement('tr');
+        ['Employé', 'Jours Travaillés', 'Heures Supp', 'Congés', 'Absences'].forEach(text => {
+            const th = document.createElement('th');
+            th.textContent = text;
+            th.style.padding = '12px';
+            th.style.backgroundColor = '#4a6fa5';
+            th.style.color = 'white';
+            th.style.textAlign = 'left';
+            th.style.borderBottom = '1px solid #ddd';
+            statsHeaderRow.appendChild(th);
+        });
+        statsThead.appendChild(statsHeaderRow);
+        statsTable.appendChild(statsThead);
+
+        const statsTbody = document.createElement('tbody');
+        employees.forEach((employee, index) => {
+            let workedDays = 0;
+            let overtimeHours = 0;
+            let leaveDays = 0;
+            let absenceDays = 0;
+
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateKey = `${currentYear}-${currentMonth}-${day}`;
+                const status = attendanceData[dateKey]?.[employee]?.status || 'ok';
+                const hours = parseInt(attendanceData[dateKey]?.[employee]?.overtimeHours) || 0;
+
+                if (status === 'ok') {
+                    workedDays++;
+                    overtimeHours += hours;
+                } else if (status === 'absent') {
+                    absenceDays++;
+                } else if (status === 'conge' || status === 'recup') {
+                    leaveDays++;
+                }
+            }
+
+            const row = document.createElement('tr');
+            row.style.backgroundColor = index % 2 === 0 ? '#fff' : '#f9f9f9';
+            row.style.borderBottom = '1px solid #eee';
+            row.style.transition = 'background-color 0.2s';
+            
+            row.innerHTML = `
+                <td style="padding: 12px; font-weight: 500;">${employee}</td>
+                <td style="padding: 12px; text-align: center;">${workedDays}</td>
+                <td style="padding: 12px; text-align: center;">${overtimeHours}</td>
+                <td style="padding: 12px; text-align: center;">${leaveDays}</td>
+                <td style="padding: 12px; text-align: center;">${absenceDays}</td>
+            `;
+            statsTbody.appendChild(row);
+        });
+        statsTable.appendChild(statsTbody);
+        statsContainer.appendChild(statsTable);
+
+        const footer = document.createElement('div');
+        footer.className = 'print-footer';
+        footer.textContent = `Page ${totalPages + 1} of ${totalPages + 1} - Généré le ${new Date().toLocaleDateString()}`;
+        footer.style.marginTop = '10px';
+        footer.style.padding = '10px';
+        footer.style.textAlign = 'center';
+        footer.style.fontSize = '11px';
+        footer.style.color = '#666';
+        footer.style.borderTop = '1px solid #eee';
+        statsContainer.appendChild(footer);
+
+        printContainer.appendChild(statsContainer);
+
+        document.body.innerHTML = '';
+        document.body.appendChild(printContainer);
+        printContainer.style.display = 'block';
+
+        setTimeout(() => {
+            window.print();
+            window.location.reload();
+        }, 500);
+    });
+    
+    printYearlyBtn.addEventListener('click', () => {
+        const printContainer = document.createElement('div');
+        printContainer.id = 'print-container';
+        document.body.appendChild(printContainer);
+
+        const year = yearlyYearSelect.value;
+        const employee = yearlyEmployeeSelect.value;
+        const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", 
+                          "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+
+        const calendarPage = document.createElement('div');
+        calendarPage.className = 'print-page';
+        
+        const header = document.createElement('div');
+        header.className = 'print-header';
+        
+        const logo = document.querySelector('.header-logo img').cloneNode(true);
+        logo.style.maxHeight = '50px';
+        header.appendChild(logo);
+        
+        const title = document.createElement('h1');
+        title.className = 'print-title';
+        title.textContent = `Calendrier Annuel ${year} - ${employee}`;
+        header.appendChild(title);
+        
+        calendarPage.appendChild(header);
+
+        const table = document.createElement('table');
+        table.className = 'yearly-print-table';
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        table.style.marginBottom = '20px';
+
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        
+        const dayHeader = document.createElement('th');
+        dayHeader.textContent = 'Jour';
+        dayHeader.style.width = '25px';
+        headerRow.appendChild(dayHeader);
+        
+        monthNames.forEach(month => {
+            const monthHeader = document.createElement('th');
+            monthHeader.colSpan = 2;
+            monthHeader.textContent = month;
+            monthHeader.style.textAlign = 'center';
+            headerRow.appendChild(monthHeader);
+        });
+        
+        thead.appendChild(headerRow);
+
+        const subHeaderRow = document.createElement('tr');
+        const emptyHeader = document.createElement('th');
+        emptyHeader.textContent = '';
+        subHeaderRow.appendChild(emptyHeader);
+        
+        for (let i = 0; i < 12; i++) {
+            const regHeader = document.createElement('th');
+            regHeader.textContent = 'Rég.';
+            subHeaderRow.appendChild(regHeader);
+            
+            const suppHeader = document.createElement('th');
+            suppHeader.textContent = 'Supp';
+            subHeaderRow.appendChild(suppHeader);
+        }
+        
+        thead.appendChild(subHeaderRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        for (let day = 1; day <= 31; day++) {
+            const row = document.createElement('tr');
+            
+            const dayCell = document.createElement('td');
+            dayCell.textContent = day;
+            row.appendChild(dayCell);
+            
+            for (let month = 0; month < 12; month++) {
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                
+                if (day > daysInMonth) {
+                    row.appendChild(document.createElement('td'));
+                    row.appendChild(document.createElement('td'));
+                    continue;
+                }
+                
+                const dateKey = `${year}-${month}-${day}`;
+                const status = attendanceData[dateKey]?.[employee]?.status || 'ok';
+                const hours = attendanceData[dateKey]?.[employee]?.overtimeHours || '0';
+                
+                if (status === 'repos' || status === 'ferie' || status === 'holiday' || 
+                    status === 'conge' || status === 'recup' || status === 'maladie') {
+                    const mergedCell = document.createElement('td');
+                    mergedCell.colSpan = 2;
+                    
+                    if (status === 'repos') {
+                        mergedCell.className = 'repos';
+                        mergedCell.textContent = 'Repos';
+                    } else if (status === 'ferie' || status === 'holiday') {
+                        mergedCell.className = 'ferie';
+                        const holidayInfo = isPublicHoliday(day, month, year);
+                        mergedCell.textContent = holidayInfo ? holidayInfo.name : 'Férié';
+                    } else if (status === 'conge') {
+                        mergedCell.className = 'conge';
+                        mergedCell.textContent = 'Congé';
+                    } else if (status === 'recup') {
+                        mergedCell.className = 'recup';
+                        mergedCell.textContent = 'Récup';
+                    } else if (status === 'maladie') {
+                        mergedCell.className = 'maladie';
+                        mergedCell.textContent = 'Maladie';
+                    }
+                    
+                    row.appendChild(mergedCell);
+                } else {
+                    const statusCell = document.createElement('td');
+                    if (status === 'absent') {
+                        statusCell.className = 'absent';
+                        statusCell.textContent = 'Absent';
+                    } else {
+                        statusCell.className = 'ok';
+                        statusCell.textContent = 'OK';
+                    }
+                    row.appendChild(statusCell);
+                    
+                    const hoursCell = document.createElement('td');
+                    hoursCell.textContent = hours;
+                    row.appendChild(hoursCell);
+                }
+            }
+            
+            tbody.appendChild(row);
+        }
+        
+        table.appendChild(tbody);
+        calendarPage.appendChild(table);
+
+        const pageFooter = document.createElement('div');
+        pageFooter.className = 'print-footer';
+        pageFooter.textContent = `Page 1/2 - Généré le ${new Date().toLocaleDateString()}`;
+        calendarPage.appendChild(pageFooter);
+
+        printContainer.appendChild(calendarPage);
+
+        const statsPage = document.createElement('div');
+        statsPage.className = 'print-page';
+        statsPage.style.pageBreakBefore = 'always';
+
+        const statsHeader = document.createElement('div');
+        statsHeader.className = 'print-header';
+        
+        const statsLogo = document.querySelector('.header-logo img').cloneNode(true);
+        statsLogo.style.maxHeight = '50px';
+        statsHeader.appendChild(statsLogo);
+        
+        const statsTitle = document.createElement('h1');
+        statsTitle.className = 'print-title';
+        statsTitle.textContent = `Statistiques Annuelle ${year} - ${employee}`;
+        statsHeader.appendChild(statsTitle);
+        
+        statsPage.appendChild(statsHeader);
+
+        const statsContainer = document.createElement('div');
+        statsContainer.style.width = '100%';
+        statsContainer.style.textAlign = 'center';
+
+        const statsTableContainer = document.createElement('div');
+        statsTableContainer.style.display = 'inline-block';
+        statsTableContainer.style.width = '80%';
+        statsTableContainer.style.margin = '0 auto';
+
+        const statsTable = document.createElement('table');
+        statsTable.className = 'stats-print-table';
+        statsTable.style.width = '100%';
+        statsTable.style.borderCollapse = 'collapse';
+        statsTable.style.margin = '20px 0';
+
+        const statsThead = document.createElement('thead');
+        const statsHeaderRow = document.createElement('tr');
+        ['Mois', 'Jours Travaillés', 'Heures Supp', 'Congés', 'Absences'].forEach(text => {
+            const th = document.createElement('th');
+            th.textContent = text;
+            th.style.padding = '10px';
+            th.style.backgroundColor = '#4a6fa5';
+            th.style.color = 'white';
+            th.style.textAlign = 'center';
+            th.style.border = '1px solid #ddd';
+            statsHeaderRow.appendChild(th);
+        });
+        statsThead.appendChild(statsHeaderRow);
+        statsTable.appendChild(statsThead);
+
+        const statsTbody = document.createElement('tbody');
+        let totalWorkedDays = 0;
+        let totalOvertime = 0;
+        let totalLeaveDays = 0;
+        let totalAbsenceDays = 0;
+
+        for (let month = 0; month < 12; month++) {
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            let workedDays = 0;
+            let overtimeHours = 0;
+            let leaveDays = 0;
+            let absenceDays = 0;
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateKey = `${year}-${month}-${day}`;
+                const status = attendanceData[dateKey]?.[employee]?.status || 'ok';
+                const hours = parseInt(attendanceData[dateKey]?.[employee]?.overtimeHours) || 0;
+
+                if (status === 'ok') {
+                    workedDays++;
+                    overtimeHours += hours;
+                } else if (status === 'absent') {
+                    absenceDays++;
+                } else if (status === 'conge' || status === 'recup') {
+                    leaveDays++;
+                }
+            }
+
+            totalWorkedDays += workedDays;
+            totalOvertime += overtimeHours;
+            totalLeaveDays += leaveDays;
+            totalAbsenceDays += absenceDays;
+
+            const row = document.createElement('tr');
+            row.style.backgroundColor = month % 2 === 0 ? '#fff' : '#f9f9f9';
+            
+            row.innerHTML = `
+                <td style="padding: 10px; border: 1px solid #ddd; font-weight: 500;">${monthNames[month]}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${workedDays}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${overtimeHours}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${leaveDays}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${absenceDays}</td>
+            `;
+            statsTbody.appendChild(row);
+        }
+
+        const totalsRow = document.createElement('tr');
+        totalsRow.style.backgroundColor = '#e9f0f7';
+        totalsRow.style.fontWeight = 'bold';
+        
+        totalsRow.innerHTML = `
+            <td style="padding: 10px; border: 1px solid #ddd;">Total Annuel</td>
+            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${totalWorkedDays}</td>
+            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${totalOvertime}</td>
+            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${totalLeaveDays}</td>
+            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${totalAbsenceDays}</td>
+        `;
+        statsTbody.appendChild(totalsRow);
+
+        statsTable.appendChild(statsTbody);
+        statsTableContainer.appendChild(statsTable);
+        statsContainer.appendChild(statsTableContainer);
+        statsPage.appendChild(statsContainer);
+
+        const statsFooter = document.createElement('div');
+        statsFooter.className = 'print-footer';
+        statsFooter.textContent = `Page 2/2 - Généré le ${new Date().toLocaleDateString()}`;
+        statsPage.appendChild(statsFooter);
+
+        printContainer.appendChild(statsPage);
+
+        const style = document.createElement('style');
+        style.textContent = `
+            @page {
+                size: A4 landscape;
+                margin: 10mm;
+            }
+            body {
+                font-family: Arial, sans-serif;
+                font-size: 12px;
+                color: #333;
+                margin: 0;
+                padding: 0;
+            }
+            .print-page {
+                width: 100%;
+                height: 100%;
+                page-break-after: always;
+                padding: 10mm;
+            }
+            .print-header {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            .print-title {
+                color: #4a6fa5;
+                font-size: 18px;
+                margin: 10px 0;
+                text-align: center;
+            }
+            .print-footer {
+                text-align: center;
+                font-size: 10px;
+                color: #666;
+                margin-top: 20px;
+                padding-top: 10px;
+                border-top: 1px solid #eee;
+            }
+            .yearly-print-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 20px 0;
+            }
+            .yearly-print-table th, 
+            .yearly-print-table td {
+                padding: 5px;
+                border: 1px solid #ddd;
+                text-align: center;
+                font-size: 10px;
+            }
+            .yearly-print-table th {
+                background-color: #4a6fa5;
+                color: white;
+                font-weight: bold;
+            }
+            .stats-print-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 20px 0;
+            }
+            .stats-print-table th, 
+            .stats-print-table td {
+                padding: 8px;
+                border: 1px solid #ddd;
+                text-align: center;
+            }
+            .stats-print-table th {
+                background-color: #4a6fa5;
+                color: white;
+                font-weight: bold;
+            }
+            .stats-print-table tr:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+            .ok {
+                color: #28a745;
+                font-weight: bold;
+            }
+            .absent {
+                color: #dc3545;
+                font-weight: bold;
+            }
+            .repos, .ferie, .conge, .recup, .maladie {
+                color: white;
+                font-weight: bold;
+            }
+            .repos {
+                background-color: #dc3545;
+            }
+            .ferie {
+                background-color: #ffc107;
+            }
+            .conge {
+                background-color: #28a745;
+            }
+            .recup {
+                background-color: #17a2b8;
+            }
+            .maladie {
+                background-color: #333;
+            }
+        `;
+        printContainer.appendChild(style);
+
+        document.body.innerHTML = '';
+        document.body.appendChild(printContainer);
+
+        setTimeout(() => {
+            window.print();
+            window.location.reload();
+        }, 500);
+    });
+    
+    attendanceBtn.addEventListener('click', () => {
+        attendanceView.style.display = 'block';
+        employeeStatsView.style.display = 'none';
+        companyStatsView.style.display = 'none';
+        yearlyView.style.display = 'none';
+        
+        attendanceBtn.classList.add('active');
+        employeeStatsBtn.classList.remove('active');
+        companyStatsBtn.classList.remove('active');
+        yearlyViewBtn.classList.remove('active');
+    });
+    
+    employeeStatsBtn.addEventListener('click', () => {
+        attendanceView.style.display = 'none';
+        employeeStatsView.style.display = 'block';
+        companyStatsView.style.display = 'none';
+        yearlyView.style.display = 'none';
+        
+        attendanceBtn.classList.remove('active');
+        employeeStatsBtn.classList.add('active');
+        companyStatsBtn.classList.remove('active');
+        yearlyViewBtn.classList.remove('active');
+        
+        showEmployeeStats();
+    });
+    
+    companyStatsBtn.addEventListener('click', () => {
+        attendanceView.style.display = 'none';
+        employeeStatsView.style.display = 'none';
+        companyStatsView.style.display = 'block';
+        yearlyView.style.display = 'none';
+        
+        attendanceBtn.classList.remove('active');
+        employeeStatsBtn.classList.remove('active');
+        companyStatsBtn.classList.add('active');
+        yearlyViewBtn.classList.remove('active');
+        
+        showCompanyStats();
+    });
+    
+    yearlyViewBtn.addEventListener('click', () => {
+        attendanceView.style.display = 'none';
+        employeeStatsView.style.display = 'none';
+        companyStatsView.style.display = 'none';
+        yearlyView.style.display = 'block';
+        
+        attendanceBtn.classList.remove('active');
+        employeeStatsBtn.classList.remove('active');
+        companyStatsBtn.classList.remove('active');
+        yearlyViewBtn.classList.add('active');
+        
+        renderYearlyCalendar();
+    });
+
+    yearlyYearSelect.addEventListener('change', () => {
+        renderYearlyCalendar();
+    });
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
