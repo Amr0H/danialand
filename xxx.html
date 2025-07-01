@@ -769,7 +769,7 @@ input[type="number"] {
     <script>
         // Check if user is logged in
 if (sessionStorage.getItem('loggedIn') !== 'true') {
-    window.location.href = 'login.html';
+    window.location.href = 'index.html';
 }
 
 // Initialize Firebase
@@ -793,7 +793,7 @@ const db = firebase.firestore();
 auth.onAuthStateChanged((user) => {
     if (!user) {
         sessionStorage.clear();
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
     }
 });
 
@@ -856,7 +856,7 @@ document.addEventListener('DOMContentLoaded', function() {
     logoutBtn.addEventListener('click', function() {
         auth.signOut().then(() => {
             sessionStorage.clear();
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         });
     });
     
